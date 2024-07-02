@@ -1,11 +1,11 @@
 import logging, beautifullogger
 import sys
-from Pipeline.pipeline import Pipeline, PipelineInstance, cache, Data, CoordComputer, singleglob
+from database import Database, DatabaseInstance, cache, Data, CoordComputer, singleglob
 import pandas as pd, numpy as np, xarray as xr
 from pathlib import Path
 logger = logging.getLogger(__name__)
 
-def add_event_preprocessing_pipeline(p: PipelineInstance, folder):
+def add_event_preprocessing_pipeline(p: DatabaseInstance, folder):
 
     @p.register
     @Data.from_class
