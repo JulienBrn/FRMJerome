@@ -67,6 +67,7 @@ class PolyData:
                 case _: pass
 
         dfs = {}
+        errors = []
         for which, l in dict(Cue_left=left_cues, Cue_right=right_cues, Pad_left=left_pads, Pad_right=right_pads, Lever_left=left_levers, Lever_right=right_levers).items():
             try:
                 [ev_type, direction] = which.split("_")
@@ -77,7 +78,7 @@ class PolyData:
                 off.sort()
                 if len(off) > 0:
                     if len(on) ==0 or on[0] > off[0]:
-                        on =[0] + on
+                        on =[-1] + on
                 if len(on) > 0:
                     if len(off) ==0 or off[-1] < on[-1]:
                         off = off + [np.nan]
@@ -85,7 +86,7 @@ class PolyData:
                     seq = pd.concat([pd.Series(on).to_frame(name="t").assign(which="on"), pd.Series(off).to_frame(name="t").assign(which="off")]).sort_values("t").reset_index(drop=True)
                     s = seq["which"].to_numpy()
                     indices = np.flatnonzero(s[: -1] == s[1:])
-                    reduced_seq = seq.iloc[np.unique(np.concatenate([indices+i for i in range(-3, 3)])), :].sort_values("t")
+                    reduced_seq = seq.iloc[np.sort(np.unique(np.concatenate([indices+i for i in range(-3, 4) if indices+i >=0 and indices+i < len(seq.index)]))), :]
                     raise Exception(f"Problem with on/off. n_on = {len(on)}, n_off={len(off)}\n{reduced_seq.to_string()}")
                 
                 
@@ -105,9 +106,13 @@ class PolyData:
                     dfs[f"{which}"] = r["t"].to_dataframe()
             except Exception as e:
                 e.add_note(f'While computing {which} events')
-                raise e
+                if not db.continue_on_error:
+                    raise e
+                else:
+                    errors.append(e)
 
-
+        if len(errors) > 0:
+            raise ExceptionGroup("Error while computing events", errors)
         res = pd.concat(dfs).reset_index(level=0, names=["Event"]).sort_values("t").reset_index().drop(columns="event")
         res["Trial"] = res["Event"].str.contains("Cue").cumsum() -1
         return res
