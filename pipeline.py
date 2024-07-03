@@ -13,6 +13,8 @@ def mk_pipeline(folder):
     pipeline.declare(CoordComputer(coords={"folder"}, dependencies=set(), compute=lambda db, df: df.assign(folder=str(folder))))
     pipeline = Database.join(pipeline, edf_preprocessing.pipeline)
     pipeline = Database.join(pipeline, signal_preprocessing.pipeline)
+    pipeline = Database.join(pipeline, event_preprocessing.pipeline)
+    pipeline = Database.join(pipeline, poly_preprocessing.pipeline)
     # signal_preprocessing.add_signal_preprocessing_pipeline(pipeline, folder)
     # event_preprocessing.add_event_preprocessing_pipeline(pipeline, folder)
     # poly_preprocessing.add_poly_preprocessing_pipeline(pipeline, folder)
@@ -28,7 +30,8 @@ if __name__ == "__main__":
     folder = Path("/home/julienb/Documents/Data/Lea/")
     p = mk_pipeline(folder).initialize()
     print(p)
-    p.run_action("plot", "stft_bipolar_spectrogram")
+    p.continue_on_error = True
+    p.run_action("compute", "poly_events")
     # print(p.get_coords(["session", "block"]))
     # print(p.get_locations("raw_edf_data").to_string())
     # selection = dict(subject="P01-CP", block=1)
